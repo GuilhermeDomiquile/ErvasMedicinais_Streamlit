@@ -1,0 +1,94 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Configuração inicial da página
+st.set_page_config(page_title="Análise de Vendas - Ervas Medicinais", layout="wide")
+
+st.title("📊 Análise de Vendas - Empresa de Ervas Medicinais")
+st.write("Explore as métricas e insights gerados com base nos dados simulados de vendas.")
+
+# Função para gerar dados simulados
+@st.cache
+def generate_data():
+    np.random.seed(42)
+    produtos = ["Chá Verde", "Camomila", "Erva Doce", "Hortelã", "Gengibre", "Erva Especial"]
+    datas = pd.date_range(start="2024-01-01", end="2024-12-31", freq="D")
+    
+    data = {
+        "Data": np.random.choice(datas, size=600),
+        "Produto": np.random.choice(produtos, size=600),
+        "Vendas": np.random.randint(100, 1000, size=600),
+        "Lucro": np.random.randint(50, 500, size=600),
+    }
+    
+    df = pd.DataFrame(data)
+    df = df.sort_values(by="Data")
+    return df
+
+# Gera os dados
+df = generate_data()
+
+# Exibição inicial dos dados
+st.subheader("📋 Dados simulados:")
+st.write(df.head())
+
+# Exibe informações básicas do DataFrame
+st.subheader("🔍 Informações básicas:")
+st.write(df.describe())
+
+# Filtro para datas
+st.subheader("📅 Filtrar por período:")
+start_date = st.date_input("Data inicial:", value=df['Data'].min())
+end_date = st.date_input("Data final:", value=df['Data'].max())
+filtered_df = df[(df['Data'] >= pd.Timestamp(start_date)) & (df['Data'] <= pd.Timestamp(end_date))]
+
+st.write("Dados filtrados:")
+st.write(filtered_df)
+
+# Total de vendas por produto
+st.subheader("📈 Total de vendas por produto:")
+sales_by_product = filtered_df.groupby('Produto')['Vendas'].sum().reset_index()
+st.write(sales_by_product)
+
+# Gráfico de vendas por produto
+st.subheader("📊 Gráfico de Vendas por Produto")
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.bar(sales_by_product['Produto'], sales_by_product['Vendas'], color='green')
+ax.set_title("Vendas por Produto", fontsize=14)
+ax.set_xlabel("Produto", fontsize=12)
+ax.set_ylabel("Total de Vendas", fontsize=12)
+plt.xticks(rotation=45, fontsize=10)
+plt.yticks(fontsize=10)
+st.pyplot(fig)
+
+# Filtro por produto
+st.subheader("🔎 Filtrar dados por produto:")
+selected_product = st.selectbox("Selecione um produto:", df['Produto'].unique())
+product_data = filtered_df[filtered_df['Produto'] == selected_product]
+st.write(f"Dados do produto: {selected_product}")
+st.write(product_data)
+
+# Gráfico de vendas ao longo do tempo para o produto selecionado
+if not product_data.empty:
+    st.subheader(f"📊 Vendas ao longo do tempo - {selected_product}")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(product_data['Data'], product_data['Vendas'], marker='o', linestyle='-', color='blue')
+    ax.set_title(f"Vendas ao longo do tempo - {selected_product}", fontsize=14)
+    ax.set_xlabel("Data", fontsize=12)
+    ax.set_ylabel("Vendas", fontsize=12)
+    plt.xticks(rotation=45, fontsize=10)
+    plt.yticks(fontsize=10)
+    st.pyplot(fig)
+
+# Comparação de Vendas x Lucro
+st.subheader("📊 Comparação: Vendas x Lucro")
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.scatter(filtered_df['Vendas'], filtered_df['Lucro'], alpha=0.7, color='purple')
+ax.set_title("Relação entre Vendas e Lucro", fontsize=14)
+ax.set_xlabel("Vendas", fontsize=12)
+ax.set_ylabel("Lucro", fontsize=12)
+plt.xticks(fontsize=10)
+plt.yticks(fontsize=10)
+st.pyplot(fig)
